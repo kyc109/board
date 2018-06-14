@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="BoardComment">
+	
+	
+	<!-- 댓글 작성자 이름 보이기 ver.성하 -->
+	<select id="selectList" parameterType="Integer" resultType="kr.co.don.board.dto.BoardCommentDTO" >
+	
+		SELECT U.NAME, C.*
+		FROM TB_BOARD_COMMENT C
+		LEFT JOIN TB_USER U ON U.USER_ID = C.USER_ID 
+		WHERE C.DOC_ID = #{docId}
+		ORDER BY C.COMMENT_ID DESC
+	
+	</select>
+	
+	
+	<insert id = "insertComment" parameterType="kr.co.don.board.dto.BoardCommentDTO">
+		
+		<selectKey keyProperty="commentId" resultType="java.lang.Integer" order="BEFORE">
+			SELECT SEQ_BOARD_COMMENT.NEXTVAL FROM DUAL
+		</selectKey>
+		
+		INSERT INTO TB_BOARD_COMMENT(
+			COMMENT_ID
+			,DOC_ID
+			,USER_ID
+			,COMMENTS
+			,REG_DT
+		  
+		  ) VALUES (
+		  	#{commentId}
+			,#{docId}
+			,#{userId}
+			,#{comments}
+			,SYSDATE
+		  )
+	
+	</insert>
+	
+	<delete id="deleteComment" parameterType="int">
+		DELETE FROM TB_BOARD_COMMENT
+		WHERE COMMENT_ID = #{commentId}
+	</delete>
+
+	<delete id="deleteId" parameterType="Integer">
+		DELETE TB_BOARD_COMMENT
+		WHERE DOC_ID = #{docId}
+	</delete>
+
+
+</mapper>

@@ -1,0 +1,101 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="MyDocList">
+
+
+	<select id="selectCount" parameterType="kr.co.don.board.dto.BoardDocDTO"
+		resultType="int">
+
+		SELECT COUNT(*)
+		FROM TB_BOARD_DOC
+		WHERE USER_ID = #{userId}
+
+		<if test="searchType != null and searchType != '' ">
+			<choose>
+				<when test="searchType eq 'T'.toString()">
+					AND TITLE LIKE '%' || #{searchText} || '%'
+				</when>
+				<when test="searchType eq 'C'.toString()">
+					AND BOARD_CONTENTS LIKE '%' || #{searchText} || '%'
+				</when>
+				<when test="searchType eq 'TC'.toString()">
+					AND (TITLE LIKE '%' || #{searchText} || '%'
+					OR BOARD_CONTENTS LIKE '%' || #{searchText} || '%'
+					)
+				</when>
+				<when test="searchType eq 'U'.toString()">
+					AND USER_ID IN (
+					SELECT USER_ID
+					FROM TB_USER
+					WHERE NAME LIKE '%' || #{searchText} || '%'
+					)
+				</when>
+			</choose>
+		</if>
+	</select>
+
+
+	<select id="selectList" parameterType="kr.co.don.board.dto.BoardSearchDTO"
+		resultType="kr.co.don.board.dto.BoardDocDTO">
+		select B.*
+		, FN_USERNAME(B.USER_ID) AS USER_NAME
+		, (SELECT COUNT(*) FROM TB_BOARD_FILE BF WHERE BF.DOC_ID = B.DOC_ID) AS
+		CNT_FILE <!-- 첨부파일 갯수가져오기 -->
+		, (SELECT COUNT(*) FROM TB_BOARD_COMMENT BC WHERE BC.DOC_ID =
+		B.DOC_ID) AS COMMENTS <!-- 댓글 갯수 가져오기 -->
+
+
+		from(
+		select rownum as rnum, A.*
+		from (
+		SELECT BD.*
+		, (SELECT BM.MAP_NAME FROM TB_BOARD_MAP BM WHERE BD.MAP_ID = BM.MAP_ID)
+		AS MAP_NAME <!--맵이름 -->
+		FROM TB_BOARD_DOC BD
+		WHERE USER_ID = #{userId}
+
+		<if test="searchType != null and searchType != '' ">
+			<choose>
+				<when test="searchType eq 'T'.toString()">
+					AND TITLE LIKE '%' || #{searchText} || '%'
+				</when>
+				<when test="searchType eq 'C'.toString()">
+					AND BOARD_CONTENTS LIKE '%' || #{searchText} || '%'
+				</when>
+				<when test="searchType eq 'TC'.toString()">
+					AND (TITLE LIKE '%' || #{searchText} || '%'
+					OR BOARD_CONTENTS LIKE '%' || #{searchText} || '%'
+					)
+				</when>
+				<when test="searchType eq 'U'.toString()">
+					AND USER_ID IN (
+					SELECT USER_ID
+					FROM TB_USER
+					WHERE NAME LIKE '%' || #{searchText} || '%'
+					)
+				</when>
+			</choose>
+		</if>
+		order by reg_dt desc
+		)A
+		where rownum <![CDATA[ <= ]]>
+		(#{page} * #{rows})
+		)B
+		where rnum <![CDATA[ > ]]>
+		(#{page}-1) * #{rows}
+
+	</select>
+
+	<select id="selectCommentList" parameterType="Integer" resultType="kr.co.don.board.dto.BoardDocDTO">
+		SELECT BD.*
+		 , (SELECT BM.MAP_NAME FROM TB_BOARD_MAP BM WHERE BD.MAP_ID = BM.MAP_ID) AS MAP_NAME 
+		FROM TB_BOARD_DOC BD
+		WHERE DOC_ID IN(
+		SELECT DOC_ID 
+		
+		FROM TB_BOARD_COMMENT 
+		WHERE USER_ID= #{userId}
+		)
+	</select>
+
+</mapper>
